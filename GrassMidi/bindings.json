@@ -1,0 +1,49 @@
+{
+  "ObsUrl": "ws://192.168.1.3:4455",
+  "ObsPassword": "XfOaaW3EQJYvwg4o",
+  "SelectedMidiDevice": "MPK mini Plus",
+  "Bindings": [
+    {
+      "Channel": 1,
+      "Note": 1,
+      "IsControlChange": true,
+      "Type": "SystemVolume",
+      "Target": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 70,
+      "IsControlChange": true,
+      "Type": "ObsVolume",
+      "Target": "\u684C\u9762\u97F3\u9891"
+    },
+    {
+      "Channel": 1,
+      "Note": 118,
+      "IsControlChange": true,
+      "Type": "MediaPlayPause",
+      "Target": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 115,
+      "IsControlChange": true,
+      "Type": "MediaPrev",
+      "Target": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 116,
+      "IsControlChange": true,
+      "Type": "MediaNext",
+      "Target": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 117,
+      "IsControlChange": true,
+      "Type": "MediaStop",
+      "Target": ""
+    }
+  ]
+}
