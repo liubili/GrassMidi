@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.9.34723.18
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrassMidi", "GrassMidi\GrassMidi.csproj", "{7CD90E59-0F67-4BF4-A5F3-C9382CE07DE4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrassMidi", "GrassMidi.csproj", "{7CD90E59-0F67-4BF4-A5F3-C9382CE07DE4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
