@@ -12,8 +12,22 @@ builder.Services.AddSingleton<MidiService>();
 
 var app = builder.Build();
 
-// Enable Static Files (for index.html)
-app.UseFileServer();
+// Serve Embedded index.html
+var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+var resourceName = "GrassMidi.wwwroot.index.html";
+string indexHtml;
+
+using (var stream = assembly.GetManifestResourceStream(resourceName))
+{
+    if (stream == null) throw new InvalidOperationException("Could not find embedded resource: " + resourceName);
+    using (var reader = new StreamReader(stream))
+    {
+        indexHtml = reader.ReadToEnd();
+    }
+}
+
+app.MapGet("/", () => Results.Content(indexHtml, "text/html"));
+app.MapGet("/index.html", () => Results.Content(indexHtml, "text/html"));
 
 // Start Services
 var midiService = app.Services.GetRequiredService<MidiService>();

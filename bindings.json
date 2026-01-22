@@ -53,6 +53,14 @@
     },
     {
       "Channel": 1,
+      "Note": 119,
+      "IsControlChange": true,
+      "Type": "ObsStartRecord",
+      "Target": "",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
       "Note": 70,
       "IsControlChange": true,
       "Type": "ObsVolume",
@@ -69,10 +77,18 @@
     },
     {
       "Channel": 1,
-      "Note": 119,
+      "Note": 71,
       "IsControlChange": true,
-      "Type": "ObsStartRecord",
-      "Target": "",
+      "Type": "ObsVolume",
+      "Target": "\u7F51\u6613\u4E91",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 75,
+      "IsControlChange": true,
+      "Type": "ObsVolume",
+      "Target": "\u6E38\u620F",
       "Data": ""
     },
     {
@@ -81,6 +97,14 @@
       "IsControlChange": true,
       "Type": "ObsStopRecord",
       "Target": "",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 72,
+      "IsControlChange": true,
+      "Type": "ObsVolume",
+      "Target": "KOOK",
       "Data": ""
     }
   ]

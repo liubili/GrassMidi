@@ -13,4 +13,9 @@
     <PackageReference Include="obs-websocket-dotnet" Version="5.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="wwwroot\index.html" />
+    <EmbeddedResource Include="wwwroot\index.html" />
+  </ItemGroup>
+
 </Project>
