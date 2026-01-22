@@ -1,0 +1,87 @@
+{
+    "ObsUrl": "ws://127.0.0.1:4455",
+    "ObsPassword": "password",
+    "SelectedMidiDevice": "MPK mini Plus",
+    "Bindings": [
+        {
+            "Channel": 1,
+            "Note": 1,
+            "IsControlChange": true,
+            "Type": "SystemVolume",
+            "Target": "",
+            "Data": ""
+        },
+        {
+            "Channel": 10,
+            "Note": 40,
+            "IsControlChange": false,
+            "Type": "ObsSwitchScene",
+            "Target": "MainScene",
+            "Data": ""
+        },
+        {
+            "Channel": 10,
+            "Note": 38,
+            "IsControlChange": false,
+            "Type": "ObsSwitchScene",
+            "Target": "Generic",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 115,
+            "IsControlChange": true,
+            "Type": "MediaPrev",
+            "Target": "",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 116,
+            "IsControlChange": true,
+            "Type": "MediaNext",
+            "Target": "",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 118,
+            "IsControlChange": true,
+            "Type": "MediaPlayPause",
+            "Target": "",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 70,
+            "IsControlChange": true,
+            "Type": "ObsVolume",
+            "Target": "Mic/Aux",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 74,
+            "IsControlChange": true,
+            "Type": "ObsVolume",
+            "Target": "Desktop Audio",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 119,
+            "IsControlChange": true,
+            "Type": "ObsStartRecord",
+            "Target": "",
+            "Data": ""
+        },
+        {
+            "Channel": 1,
+            "Note": 117,
+            "IsControlChange": true,
+            "Type": "ObsStopRecord",
+            "Target": "",
+            "Data": ""
+        }
+    ]
+}

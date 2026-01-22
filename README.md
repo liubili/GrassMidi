@@ -2,7 +2,7 @@
 
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)
 ![Language](https://img.shields.io/badge/Language-C%23-239120?style=flat-square&logo=csharp)
-![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![License](https://img.shields.io/badge/License-AGPL_v3-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows)
 
 MIDI 桥接工具。连接 MIDI 控制器与 OBS Studio / 系统功能。
@@ -53,4 +53,4 @@ MIDI 桥接工具。连接 MIDI 控制器与 OBS Studio / 系统功能。
 
 ## 协议
 
-APGL-3.0
+AGPL-3.0
