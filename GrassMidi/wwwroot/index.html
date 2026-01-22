@@ -7,543 +7,734 @@
     <title>GrassMidi 控制台</title>
     <style>
         :root {
-            /* OBS 风格配色 */
-            --bg-color: transparent;
-            /* 由 OBS 决定背景 */
-            --panel-bg: rgba(43, 46, 56, 0.95);
-            /* OBS Yami 深色背景 */
-            --text-color: #efefef;
-            --sub-text: #aaaaaa;
-            --accent-color: #00dbbf;
-            /* 保持 Grass 风格 */
-            --accent-hover: #00b39b;
-            --danger-color: #e04f4f;
+            --bg-color: #2F3139;
+            --surface-color: #26282e;
+            --surface-hover: #32353d;
+            --primary-color: #00e6c3;
+            --text-main: #eeeeee;
+            --text-sub: #8d9199;
+            --danger: #f65a5a;
             --border-radius: 6px;
-            --border-color: #3e424e;
+            --border-color: #1e1f24;
         }
 
+        html,
         body {
-            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
             margin: 0;
             padding: 10px;
             font-size: 13px;
             height: 100vh;
+            width: 100%;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            user-select: none;
+            /* 防止拖拽时选中文本 */
         }
 
-        /* 顶部栏 */
-        .top-bar {
+        /* 顶部导航 */
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
         }
 
-        .bar-left,
-        .bar-right {
+        .brand {
+            font-weight: 700;
+            color: var(--primary-color);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        h3 {
-            margin: 0;
-            font-size: 16px;
-            color: var(--accent-color);
-        }
-
-        /* LED 指示灯 */
-        .indicator {
-            display: flex;
-            align-items: center;
-            font-size: 12px;
-            color: var(--sub-text);
-            gap: 5px;
-        }
-
-        .led {
+        .led-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background-color: #444;
-            transition: background-color 0.1s;
+            background: #444;
+            transition: all 0.1s;
         }
 
-        .led.active {
-            background-color: #0f0;
-            box-shadow: 0 0 5px #0f0;
+        .led-dot.on {
+            background: #0f0;
+            box-shadow: 0 0 6px #0f0;
         }
 
-        .led.warn {
-            background-color: #f00;
-        }
-
-        /* 按钮 */
-        button {
-            background-color: var(--accent-color);
-            color: #1a1a1a;
-            border: none;
-            padding: 6px 12px;
+        .btn {
+            background: var(--surface-color);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-weight: 600;
             font-size: 12px;
+            transition: 0.2s;
         }
 
-        button:hover {
-            filter: brightness(0.9);
+        .btn:hover {
+            background: var(--surface-hover);
+            border-color: #555;
         }
 
-        button.icon-btn {
-            padding: 6px;
-            background: #333;
-            color: #fff;
+        .btn-primary {
+            background: var(--primary-color);
+            color: #000;
+            border: none;
+            font-weight: 600;
         }
 
-        button.danger {
-            background-color: var(--danger-color);
-            color: #fff;
+        .btn-primary:hover {
+            background: #00c4a6;
         }
 
-        /* 主内容区 (滚动) */
-        .main-content {
+        /* 核心网格布局 (Responsive Tile Grid) */
+        .grid-container {
             flex-grow: 1;
             overflow-y: auto;
-            border-top: 1px solid var(--border-color);
-            padding-top: 10px;
-        }
-
-        /* 绑定列表 (响应式 Grid/List) */
-        .binding-list {
             display: grid;
-            gap: 8px;
-            /* 默认宽屏 3列 */
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 6px;
+            /* 智能响应: 最小宽度 110px, 自动填满 */
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            align-content: start;
+            padding-right: 4px;
         }
 
-        /* 极窄屏幕 (< 500px) 变为单列 */
-        @media (max-width: 500px) {
-            .binding-list {
-                grid-template-columns: 1fr;
+        /* 极窄模式 (< 250px): 强制 2 列小块 */
+        @media (max-width: 250px) {
+            .grid-container {
+                grid-template-columns: 1fr 1fr;
             }
         }
 
-        .binding-card {
-            background: var(--panel-bg);
+        /* 卡片样式 */
+        .card {
+            background: var(--surface-color);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
-            padding: 8px 12px;
+            padding: 8px;
+            position: relative;
+            cursor: grab;
+            transition: transform 0.2s, border-color 0.2s, background 0.2s;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 50px;
+            text-align: center;
         }
 
-        .card-info {
-            flex-grow: 1;
-            width: 0;
-            /* flex text truncate hack */
+        .card:active {
+            cursor: grabbing;
+            transform: scale(0.98);
         }
 
-        .card-row-1 {
-            font-weight: bold;
-            margin-bottom: 2px;
-            white-space: nowrap;
+        .card:hover {
+            border-color: #555;
+            background: var(--surface-hover);
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+            border: 1px dashed var(--primary-color);
+        }
+
+        .card.drag-over {
+            border-top: 2px solid var(--primary-color);
+        }
+
+        .card.active {
+            border-color: var(--primary-color);
+            background: rgba(0, 230, 195, 0.1);
+            box-shadow: 0 0 10px rgba(0, 230, 195, 0.15);
+        }
+
+        .card-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .card-type {
+            font-weight: 600;
+            font-size: 12px;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .card-row-2 {
-            font-size: 12px;
-            color: var(--sub-text);
+        .card-target {
+            font-size: 10px;
+            color: var(--text-sub);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .card-midi {
-            color: var(--accent-color);
-            font-family: monospace;
+        /* 仅在卡片较大时显示的详细信息 */
+        .card-detail {
+            display: none;
+            font-size: 9px;
+            color: #555;
+            margin-top: 4px;
         }
 
-        .card-actions {
-            margin-left: 10px;
+        /* 当网格项足够宽时显示更多细节 (Container Queries 的简单替代) 
+           由于 CSS Container Queries 兼容性, 这里用 Media Query 近似
+        */
+        @media (min-width: 400px) {
+            .card {
+                text-align: left;
+                align-items: flex-start;
+                padding: 10px 12px;
+            }
+
+            .card-detail {
+                display: block;
+            }
+
+            .card-icon {
+                float: right;
+                margin: 0;
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                opacity: 0.5;
+            }
         }
 
-        /* 设置菜单 (二级覆盖层) */
-        .settings-overlay {
-            position: absolute;
-            top: 40px;
-            right: 10px;
-            left: 10px;
-            background: #2b2e38;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        /* 编辑表单遮罩 */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
             z-index: 100;
             display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
         }
 
-        .settings-overlay.show {
-            display: block;
+        .overlay.show {
+            display: flex;
+        }
+
+        .overlay-box {
+            background: #252525;
+            padding: 20px;
+            border-radius: 8px;
+            width: 280px;
+            border: 1px solid #444;
         }
 
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
+            color: var(--text-sub);
+            font-size: 11px;
             margin-bottom: 4px;
-            color: var(--sub-text);
         }
 
-        .form-group input,
-        .form-group select {
+        .form-control {
             width: 100%;
             box-sizing: border-box;
-            background: #1a1a1a;
-            border: 1px solid #444;
+            background: #111;
+            border: 1px solid #333;
             color: white;
             padding: 6px;
             border-radius: 4px;
         }
 
-        /* 学习模式全屏覆盖 */
-        .learning-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            backdrop-filter: blur(2px);
+        /* Custom Scrollbar for WebKit */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
         }
     </style>
 </head>
 
 <body>
 
-    <!-- 顶部状态栏 -->
-    <div class="top-bar">
-        <div class="bar-left">
-            <h3>GrassMidi</h3>
-            <div class="indicator" title="MIDI 活动">
-                <div id="midiLed" class="led"></div> MIDI
-            </div>
-            <div class="indicator" title="OBS 连接状态">
-                <div id="obsLed" class="led"></div> OBS
-            </div>
+    <div class="header">
+        <div class="brand">
+            GrassMidi <div id="statusLed" class="led-dot" title="OBS 状态"></div>
         </div>
-        <div class="bar-right">
-            <button onclick="startLearning()">+ 添加绑定</button>
-            <button class="icon-btn" onclick="toggleSettings()">⚙️ 设置</button>
+        <div style="display:flex; gap:6px;">
+            <button class="btn" onclick="openSettings()">设置</button>
+            <button class="btn btn-primary" onclick="startAdd()">+ 添加</button>
         </div>
     </div>
 
-    <!-- 设置面板 (隐藏) -->
-    <div id="settingsPanel" class="settings-overlay">
-        <div class="form-group">
-            <label>MIDI 输入设备</label>
-            <div style="display:flex; gap:5px;">
-                <select id="midiDeviceSelect"></select>
-                <button onclick="saveMidiDevice()">确定</button>
-            </div>
-        </div>
-        <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
-        <div class="form-group">
-            <label>OBS WebSocket 地址</label>
-            <input type="text" id="obsUrl" value="ws://localhost:4455">
-        </div>
-        <div class="form-group">
-            <label>OBS 密码</label>
-            <input type="password" id="obsPass">
-        </div>
-        <div style="text-align:right;">
-            <button onclick="saveObsConfig()">保存并连接</button>
-        </div>
+    <div class="grid-container" id="cardContainer">
+        <!-- Cards Injected Here -->
     </div>
 
-    <!-- 主列表区域 -->
-    <div class="main-content">
-        <div id="bindingList" class="binding-list">
-            <!-- 卡片注入位置 -->
-        </div>
-        <div id="emptyTip" style="text-align:center; color:#666; margin-top:20px; display:none;">
-            暂无绑定，点击右上角添加
-        </div>
-    </div>
+    <!-- 编辑/添加 弹窗 -->
+    <div class="overlay" id="editModal">
+        <div class="overlay-box">
+            <h3 style="margin-top:0; color:var(--primary-color)" id="modalTitle">编辑绑定</h3>
 
-    <!-- 学习模式弹窗 -->
-    <div id="learningOverlay" class="learning-overlay">
-        <h2 style="color:var(--accent-color)">学习模式</h2>
-        <p style="color:#ccc">请操作 MIDI 控制器...</p>
-
-        <div id="learningStatus" style="font-size:1.2em; margin:10px; color:#fff;">...</div>
-
-        <div id="bindingForm"
-            style="background:#2b2e38; padding:20px; border-radius:8px; width: 300px; display:none; border: 1px solid #444;">
             <div class="form-group">
-                <label>操作类型</label>
-                <select id="bindType" onchange="updateTargetPlaceholder()">
-                    <option value="SystemVolume">系统音量 (Windows)</option>
-                    <option value="ObsVolume">OBS 源音量</option>
-                    <option value="ObsMute">OBS 源静音切换</option>
-                    <option value="ObsSwitchScene">OBS 切换场景</option>
-                    <option value="MediaPlayPause">媒体 播放/暂停</option>
-                    <option value="MediaNext">媒体 下一曲</option>
-                    <option value="MediaPrev">媒体 上一曲</option>
-                    <option value="MediaStop">媒体 停止</option>
+                <label>MIDI 信号 (自动学习)</label>
+                <div id="midiSignalDisplay"
+                    style="padding:8px; background:#111; border:1px solid #333; border-radius:4px; font-family:monospace; color:#0f0;">
+                    等待输入...
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>功能类型</label>
+                <select id="bindType" class="form-control" onchange="updateUI()">
+                    <optgroup label="OBS 控制">
+                        <option value="ObsVolume">OBS 源音量</option>
+                        <option value="ObsMute">OBS 静音</option>
+                        <option value="ObsSwitchScene">OBS 切换场景</option>
+                        <option value="ObsStartStream">OBS 开始推流</option>
+                        <option value="ObsStopStream">OBS 停止推流</option>
+                        <option value="ObsStartRecord">OBS 开始录制</option>
+                        <option value="ObsStopRecord">OBS 停止录制</option>
+                        <option value="ObsStopRecord">OBS 停止录制</option>
+                        <option value="ObsSaveReplay">OBS 保存回放</option>
+                        <option value="ObsSetForegroundWindow">设定前台窗口到源</option>
+                    </optgroup>
+                    <optgroup label="媒体控制">
+                        <option value="MediaPlayPause">媒体 播放/暂停</option>
+                        <option value="MediaNext">媒体 下一曲</option>
+                        <option value="MediaPrev">媒体 上一曲</option>
+                        <option value="MediaStop">媒体 停止</option>
+                    </optgroup>
+                    <optgroup label="系统与应用">
+                        <option value="SystemVolume">系统音量</option>
+                        <option value="RunProcess">运行程序</option>
+                        <option value="KeyboardKey">模拟按键</option>
+                    </optgroup>
+                    <optgroup label="网络">
+                        <option value="HttpRequest">发送 HTTP 请求</option>
+                    </optgroup>
                 </select>
             </div>
+
             <div class="form-group">
-                <label>目标 (源/场景名称)</label>
-                <input type="text" id="bindTarget" placeholder="留空">
+                <label>目标 (源/场景名称/URL/路径)</label>
+                <input type="text" id="bindTarget" class="form-control" placeholder="Target">
             </div>
-            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
-                <button onclick="cancelLearn()" style="background:#555">取消</button>
-                <button onclick="saveBinding()">保存</button>
+
+            <div class="form-group" id="dataGroup">
+                <label>附加参数 (Args/Key Code/Method)</label>
+                <input type="text" id="bindData" class="form-control" placeholder="Optional Data">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                <button class="btn" onclick="deleteCurrent()" style="color:var(--danger); border-color:var(--danger);"
+                    id="delBtn">删除</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" onclick="closeModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <button id="cancelLearnBtn" onclick="cancelLearn()"
-            style="margin-top:20px; background:transparent; border:1px solid #666; color:#aaa;">取消</button>
+    <!-- 设置弹窗 -->
+    <div class="overlay" id="settingsModal">
+        <div class="overlay-box">
+            <h3>设置</h3>
+            <div class="form-group">
+                <label>MIDI 设备</label>
+                <select id="devSelect" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>OBS 地址</label>
+                <input id="obsUrl" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>OBS 密码</label>
+                <input id="obsPass" type="password" class="form-control">
+            </div>
+            <div style="text-align:right; margin-top:15px;">
+                <button class="btn"
+                    onclick="document.getElementById('settingsModal').classList.remove('show')">关闭</button>
+                <button class="btn btn-primary" onclick="saveConfig()">保存并连接</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        let currentConfig = {};
-        let learnedMidi = null;
+        let config = { bindings: [] };
+        let editingIndex = -1; // -1 = New
+        let learnedMidi = null; // Current editing midi data
+        let learnInterval = null;
         let lastMidiTime = 0;
 
-        const typeLabels = {
-            "SystemVolume": "💻 系统音量",
-            "ObsVolume": "🔊 OBS 音量",
-            "ObsMute": "🔇 OBS 静音",
-            "ObsSwitchScene": "🎬 切换场景",
-            "MediaPlayPause": "⏯️ 播放/暂停",
-            "MediaNext": "⏭️ 下一曲",
-            "MediaPrev": "⏮️ 上一曲",
-            "MediaStop": "⏹️ 停止"
+        // Type Icons & Labels
+        const meta = {
+            "SystemVolume": { icon: "💻", label: "系统音量" },
+            "ObsVolume": { icon: "🔊", label: "OBS音量" },
+            "ObsMute": { icon: "🔇", label: "OBS静音" },
+            "ObsSwitchScene": { icon: "🎬", label: "切场景" },
+            "ObsStartStream": { icon: "📡", label: "推流" },
+            "ObsStopStream": { icon: "🛑", label: "停推" },
+            "ObsStartRecord": { icon: "⏺️", label: "录制" },
+            "ObsStopRecord": { icon: "⏹️", label: "停录" },
+            "ObsSaveReplay": { icon: "⏪", label: "保存回放" },
+            "MediaPlayPause": { icon: "⏯️", label: "播放/暂停" },
+            "MediaNext": { icon: "⏭️", label: "下一曲" },
+            "MediaPrev": { icon: "⏮️", label: "上一曲" },
+            "MediaStop": { icon: "⏹️", label: "停止" },
+            "RunProcess": { icon: "🚀", label: "运行" },
+            "KeyboardKey": { icon: "⌨️", label: "按键" },
+            "HttpRequest": { icon: "🌐", label: "HTTP" },
+            "ObsSetForegroundWindow": { icon: "🎯", label: "捕捉前台" }
         };
 
-        function toggleSettings() {
-            const el = document.getElementById('settingsPanel');
-            el.classList.toggle('show');
-        }
 
-        async function loadData() {
-            const [configRes, devicesRes] = await Promise.all([
-                fetch('/api/config'),
-                fetch('/api/devices')
-            ]);
 
-            const devices = await devicesRes.json();
-            currentConfig = await configRes.json();
+        // --- Core Logic ---
 
-            // 设备列表
-            const sel = document.getElementById('midiDeviceSelect');
+        async function init() {
+            // Load Devices
+            const dRes = await fetch('/api/devices');
+            const devs = await dRes.json();
+            const sel = document.getElementById('devSelect');
             sel.innerHTML = '';
-            devices.forEach(d => {
+            devs.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d;
-                opt.innerText = d;
-                if (d == currentConfig.selectedMidiDevice) opt.selected = true;
+                opt.innerText = d; opt.value = d;
                 sel.appendChild(opt);
             });
 
-            // OBS配置
-            document.getElementById('obsUrl').value = currentConfig.obsUrl;
-            document.getElementById('obsPass').value = currentConfig.obsPassword;
+            await reloadConfig();
 
-            renderBindings();
+            // Start Loops
+            setInterval(pollMidiActivity, 100);
+            setInterval(pollObsStatus, 2000);
         }
 
-        function renderBindings() {
-            const container = document.getElementById('bindingList');
-            container.innerHTML = '';
+        async function reloadConfig() {
+            const res = await fetch('/api/config');
+            config = await res.json();
 
-            if (!currentConfig.bindings || currentConfig.bindings.length === 0) {
-                document.getElementById('emptyTip').style.display = 'block';
-                return;
-            } else {
-                document.getElementById('emptyTip').style.display = 'none';
-            }
+            document.getElementById('devSelect').value = config.selectedMidiDevice;
+            document.getElementById('obsUrl').value = config.obsUrl;
+            document.getElementById('obsPass').value = config.obsPassword;
 
-            currentConfig.bindings.forEach((b, idx) => {
-                const card = document.createElement('div');
-                card.className = 'binding-card';
-
-                const midiText = `Ch.${b.channel} ${b.isControlChange ? 'CC' : 'Note'}.${b.note}`;
-                const targetText = b.target ? `[${b.target}]` : '';
-
-                card.innerHTML = `
-                <div class="card-info">
-                    <div class="card-row-1">${typeLabels[b.type] || b.type} <span style="font-weight:normal">${targetText}</span></div>
-                    <div class="card-row-2">
-                        <span class="card-midi">${midiText}</span>
-                    </div>
-                </div>
-                <div class="card-actions">
-                    <button class="icon-btn danger" onclick="deleteBinding(${idx})" title="删除">×</button>
-                </div>
-            `;
-                container.appendChild(card);
-            });
-        }
-
-        async function saveMidiDevice() {
-            currentConfig.selectedMidiDevice = document.getElementById('midiDeviceSelect').value;
-            await saveConfig();
-            alert('设备已保存');
-        }
-
-        async function saveObsConfig() {
-            currentConfig.obsUrl = document.getElementById('obsUrl').value;
-            currentConfig.obsPassword = document.getElementById('obsPass').value;
-            await saveConfig();
-            location.reload();
+            renderGrid();
         }
 
         async function saveConfig() {
+            config.selectedMidiDevice = document.getElementById('devSelect').value;
+            config.obsUrl = document.getElementById('obsUrl').value;
+            config.obsPassword = document.getElementById('obsPass').value;
+
             await fetch('/api/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentConfig)
+                body: JSON.stringify(config)
             });
-            document.getElementById('settingsPanel').classList.remove('show');
+            document.getElementById('settingsModal').classList.remove('show');
+            location.reload();
         }
 
-        async function deleteBinding(idx) {
-            if (!confirm('删除此绑定?')) return;
-            currentConfig.bindings.splice(idx, 1);
-            await saveConfig();
-            renderBindings();
+        // --- Rendering & Drag Drop ---
+
+        function renderGrid() {
+            const con = document.getElementById('cardContainer');
+            con.innerHTML = '';
+
+            config.bindings.forEach((b, idx) => {
+                const info = meta[b.type] || { icon: '❓', label: b.type };
+                const el = document.createElement('div');
+                el.className = 'card';
+                el.draggable = true;
+                el.dataset.idx = idx;
+                // Key for highlight
+                el.dataset.midikey = `${b.channel}-${b.note}-${b.isControlChange}`;
+
+                const target = b.target ? b.target : '';
+
+                el.innerHTML = `
+                <div class="card-icon">${info.icon}</div>
+                <div class="card-type">${info.label}</div>
+                <div class="card-target">${target}</div>
+                <div class="card-detail">CH ${b.channel} ${b.isControlChange ? 'CC' : 'Note'} ${b.note}</div>
+            `;
+
+                // Interaction
+                el.ondblclick = () => startEdit(idx);
+                el.ondragstart = handleDragStart;
+                el.ondragover = handleDragOver;
+                el.ondrop = handleDrop;
+                el.ondragend = handleDragEnd;
+
+                con.appendChild(el);
+            });
         }
 
-        // 状态轮询 (LED + OBS)
-        setInterval(async () => {
-            // 1. MIDI Activity
-            try {
-                const res = await fetch('/api/midi/last');
-                if (res.ok) {
-                    const msg = await res.json();
-                    if (msg && msg.timestamp > lastMidiTime) {
-                        lastMidiTime = msg.timestamp;
-                        flashMidiLed();
-                    }
-                }
-            } catch { }
-        }, 150);
+        // Drag Logic
+        let dragSrcIndex = -1;
 
-        setInterval(async () => {
-            try {
-                const res = await fetch('/api/obs/status');
-                const status = await res.json();
-                const led = document.getElementById('obsLed');
-                if (status.connected) {
-                    led.className = 'led active';
-                } else {
-                    led.className = 'led warn';
-                }
-            } catch { }
-        }, 2000);
-
-        function flashMidiLed() {
-            const led = document.getElementById('midiLed');
-            led.classList.add('active');
-            setTimeout(() => led.classList.remove('active'), 100);
+        function handleDragStart(e) {
+            dragSrcIndex = Number(this.dataset.idx);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
         }
 
-        function updateTargetPlaceholder() {
-            const type = document.getElementById('bindType').value;
-            const targetInput = document.getElementById('bindTarget');
-            if (type === 'SystemVolume' || type.startsWith('Media')) {
-                targetInput.placeholder = '无需填写';
-                targetInput.disabled = true;
-            } else if (type === 'ObsSwitchScene') {
-                targetInput.placeholder = '输入场景名称';
-                targetInput.disabled = false;
-            } else {
-                targetInput.placeholder = '输入源名称';
-                targetInput.disabled = false;
+        function handleDragOver(e) {
+            if (e.preventDefault) e.preventDefault();
+            this.classList.add('drag-over');
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.stopPropagation();
+            this.classList.remove('drag-over');
+            const dragDestIndex = Number(this.dataset.idx);
+
+            if (dragSrcIndex !== dragDestIndex) {
+                // Swap or Move? Move is better for reordering
+                const item = config.bindings.splice(dragSrcIndex, 1)[0];
+                config.bindings.splice(dragDestIndex, 0, item);
+
+                renderGrid(); // Optimistic update
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
             }
+            return false;
         }
 
-        // Learning Logic
-        let pollingInterval = null;
+        function handleDragEnd() {
+            document.querySelectorAll('.card').forEach(c => {
+                c.classList.remove('dragging');
+                c.classList.remove('drag-over');
+            });
+        }
+
+        // --- Edit / Add Logic ---
+
+        function startAdd() {
+            editingIndex = -1;
+            learnedMidi = null;
+            document.getElementById('modalTitle').innerText = "添加新绑定";
+            document.getElementById('delBtn').style.display = 'none';
+
+            // Reset Form //
+            document.getElementById('bindType').value = 'SystemVolume';
+            document.getElementById('bindTarget').value = '';
+            document.getElementById('bindData').value = '';
+            renderMidiSignal();
+
+            document.getElementById('editModal').classList.add('show');
+            startLearning();
+        }
+
+        function startEdit(idx) {
+            editingIndex = idx;
+            const b = config.bindings[idx];
+
+            // Pre-fill existing data as "learned"
+            learnedMidi = { channel: b.channel, note: b.note, isControlChange: b.isControlChange };
+
+            document.getElementById('modalTitle').innerText = "编辑绑定";
+            document.getElementById('delBtn').style.display = 'block';
+
+            document.getElementById('bindType').value = b.type;
+            document.getElementById('bindTarget').value = b.target;
+            document.getElementById('bindData').value = b.data ? b.data : '';
+            renderMidiSignal();
+
+            document.getElementById('editModal').classList.add('show');
+            startLearning(); // Allow overwriting midi signal
+        }
 
         function startLearning() {
-            document.getElementById('learningOverlay').style.display = 'flex';
-            document.getElementById('learningStatus').style.display = 'block';
-            document.getElementById('bindingForm').style.display = 'none';
-            document.getElementById('cancelLearnBtn').style.display = 'block';
-            learnedMidi = null;
-
-            // Poll
-            pollingInterval = setInterval(async () => {
-                const res = await fetch('/api/midi/last');
-                if (res.ok) {
+            if (learnInterval) clearInterval(learnInterval);
+            learnInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/midi/last');
+                    if (!res.ok) return;
                     const msg = await res.json();
-                    if (msg && msg.timestamp > Date.now() - 500) { // 必须是最近 0.5s 的
-                        learnedMidi = msg;
-                        showBindingForm(msg);
-                        clearInterval(pollingInterval);
+
+                    // If msg is fresh (last 500ms), update
+                    if (msg && msg.timestamp > Date.now() - 500) {
+                        // Only update if different
+                        if (!learnedMidi ||
+                            learnedMidi.channel != msg.channel ||
+                            learnedMidi.note != msg.note ||
+                            learnedMidi.isControlChange != msg.isControlChange) {
+
+                            learnedMidi = msg;
+                            renderMidiSignal();
+                        }
                     }
-                }
+                } catch { }
             }, 100);
         }
 
-        function showBindingForm(msg) {
-            document.getElementById('learningStatus').style.display = 'none';
-            document.getElementById('cancelLearnBtn').style.display = 'none';
-            document.getElementById('bindingForm').style.display = 'block';
-
-            const type = msg.isControlChange ? '旋钮/CC' : '按键/Note';
-            document.querySelector('#bindingForm').previousElementSibling.innerText =
-                `收到信号: Ch.${msg.channel} ${type} ${msg.note}`;
-
-            // Auto select type preference
-            const typeSel = document.getElementById('bindType');
-            if (msg.isControlChange) {
-                if (typeSel.value.startsWith('Media') || typeSel.value == 'ObsSwitchScene' || typeSel.value == 'ObsMute') {
-                    typeSel.value = 'SystemVolume';
-                }
+        function renderMidiSignal() {
+            const div = document.getElementById('midiSignalDisplay');
+            if (!learnedMidi) {
+                div.innerText = "请操作控制器...";
+                div.style.color = "#aaa";
             } else {
-                if (typeSel.value == 'SystemVolume' || typeSel.value == 'ObsVolume') {
-                    typeSel.value = 'MediaPlayPause';
-                }
+                const type = learnedMidi.isControlChange ? "CC" : "Note";
+                div.innerText = `CH ${learnedMidi.channel} | ${type} ${learnedMidi.note}`;
+                div.style.color = "#0f0";
             }
-            updateTargetPlaceholder();
+            updateUI();
         }
 
-        function cancelLearn() {
-            if (pollingInterval) clearInterval(pollingInterval);
-            document.getElementById('learningOverlay').style.display = 'none';
+        function updateUI() {
+            const type = document.getElementById('bindType').value;
+            const target = document.getElementById('bindTarget');
+            const dataInput = document.getElementById('bindData');
+            const dataGroup = document.getElementById('dataGroup');
+
+            target.disabled = false;
+            dataGroup.style.display = 'block';
+
+            if (type == 'SystemVolume' || type.startsWith('Media') || type.startsWith('ObsS')) {
+                // 部分 OBS 动作和媒体动作不需要参数
+                target.disabled = true;
+                target.placeholder = "无需填写";
+                dataGroup.style.display = 'none';
+
+                // 例外: SwitchScene 需要 Target
+                if (type == 'ObsSwitchScene') {
+                    target.disabled = false;
+                    target.placeholder = "场景名称";
+                }
+                // 例外: SetForegroundWindow 需要 Target
+                if (type == 'ObsSetForegroundWindow') {
+                    target.disabled = false;
+                    target.placeholder = "OBS 源名称 (例如 '窗口采集' 或 '音频采集')";
+                }
+            } else if (type == 'RunProcess') {
+                target.placeholder = "完整程序路径 (例如 C:\\Windows\\notepad.exe)";
+                dataInput.placeholder = "启动参数 (可选)";
+            } else if (type == 'KeyboardKey') {
+                target.placeholder = "备注 (随意填写)";
+                dataInput.placeholder = "虚拟键码(十进制) 例如 65=A, 13=Enter";
+            } else if (type == 'HttpRequest') {
+                target.placeholder = "完整 URL (例如 http://api.com/hook)";
+                dataInput.placeholder = "Method|Body (例如 POST|{\"a\":1}) 或 GET";
+            } else {
+                target.placeholder = "源名称 / 场景名称";
+                dataGroup.style.display = 'none';
+            }
         }
 
-        async function saveBinding() {
-            if (!learnedMidi) return;
+        async function saveEdit() {
+            if (!learnedMidi) {
+                alert("未检测到 MIDI 信号");
+                return;
+            }
+
             const newBinding = {
                 channel: learnedMidi.channel,
                 note: learnedMidi.note,
                 isControlChange: learnedMidi.isControlChange,
                 type: document.getElementById('bindType').value,
-                target: document.getElementById('bindTarget').value
+                target: document.getElementById('bindTarget').value,
+                data: document.getElementById('bindData').value
             };
-            currentConfig.bindings.push(newBinding);
-            await saveConfig();
-            renderBindings();
-            cancelLearn();
+
+            if (editingIndex === -1) {
+                config.bindings.push(newBinding);
+            } else {
+                config.bindings[editingIndex] = newBinding;
+            }
+
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            closeModal();
+            renderGrid();
         }
 
-        loadData();
-    </script>
+        async function deleteCurrent() {
+            if (editingIndex !== -1 && confirm("确认删除?")) {
+                config.bindings.splice(editingIndex, 1);
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                closeModal();
+                renderGrid();
+            }
+        }
 
+        function closeModal() {
+            if (learnInterval) clearInterval(learnInterval);
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        // --- Highlighting ---
+
+        async function pollMidiActivity() {
+            try {
+                const res = await fetch('/api/midi/last');
+                if (!res.ok) return;
+                const msg = await res.json();
+                if (msg && msg.timestamp > lastMidiTime) {
+                    lastMidiTime = msg.timestamp;
+                    const key = `${msg.channel}-${msg.note}-${msg.isControlChange}`;
+
+                    document.querySelectorAll(`.card[data-midikey="${key}"]`).forEach(c => {
+                        c.classList.remove('active');
+                        void c.offsetWidth;
+                        c.classList.add('active');
+                        setTimeout(() => c.classList.remove('active'), 200);
+                    });
+                }
+            } catch { }
+        }
+
+        async function pollObsStatus() {
+            try {
+                const res = await fetch('/api/obs/status');
+                const d = await res.json();
+                document.getElementById('statusLed').className = d.connected ? 'led-dot on' : 'led-dot';
+            } catch { }
+        }
+
+        function openSettings() { document.getElementById('settingsModal').classList.add('show'); }
+
+        init();
+
+    </script>
 </body>
 
 </html>

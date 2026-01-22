@@ -111,69 +111,156 @@ public class MidiService : IDisposable
         ProcessBinding(channel, note, isControlChange, value);
     }
 
+    public void TriggerMidiEvent(int channel, int note, bool isControlChange, int value)
+    {
+        OnMidiMessageReceived?.Invoke(channel, note, isControlChange, value);
+        ProcessBinding(channel, note, isControlChange, value);
+    }
+
     private void ProcessBinding(int channel, int note, bool isControlChange, int value)
     {
         var config = _configService.GetConfig();
-        var binding = config.Bindings.FirstOrDefault(b => 
+        // 查找所有匹配的绑定 (支持一对多)
+        var bindings = config.Bindings.Where(b => 
             b.Channel == channel && 
             b.Note == note && 
             b.IsControlChange == isControlChange);
 
-        if (binding == null) return;
-
         float normalizedVolume = value / 127f;
 
-        switch (binding.Type)
+        foreach (var binding in bindings)
         {
-            case BindingType.SystemVolume:
-                _audioService.SetMasterVolume(normalizedVolume);
-                break;
-            case BindingType.ObsVolume:
-                // 转换 0-127 到 dB
-                // 1. 应用立方锥度 (Cubic Taper) 模拟推子曲线: mul = val^3
-                // 2. 转换为 dB: dB = 20 * Log10(mul)
+            switch (binding.Type)
+            {
+                case BindingType.SystemVolume:
+                    _audioService.SetMasterVolume(normalizedVolume);
+                    break;
+                case BindingType.ObsVolume:
+                    // 使用立方使得音量调节更平滑 (Cubic Taper)
+                    // 直接传递 Multiplier (0-1)，避免 dB 转换的 -inf 问题
+                    float inputMul = normalizedVolume * normalizedVolume * normalizedVolume;
+                    _obsService.SetVolume(binding.Target, inputMul, useDb: false);
+                    break;
+                case BindingType.ObsMute:
+                    if (value > 0) _obsService.ToggleMute(binding.Target);
+                    break;
+                case BindingType.ObsSwitchScene:
+                    if (value > 0) _obsService.SetCurrentScene(binding.Target);
+                    break;
                 
-                float inputMul = normalizedVolume * normalizedVolume * normalizedVolume;
-                float obsDb;
+                // Media Controls
+                case BindingType.MediaPlayPause:
+                    if (value > 0) InputHelper.TogglePlayPause();
+                    break;
+                case BindingType.MediaNext:
+                    if (value > 0) InputHelper.NextTrack();
+                    break;
+                case BindingType.MediaPrev:
+                    if (value > 0) InputHelper.PrevTrack();
+                    break;
+                 case BindingType.MediaStop:
+                    if (value > 0) InputHelper.StopMedia();
+                    break;
+                
+                // OBS Stream/Record
+                case BindingType.ObsStartStream:
+                    if (value > 0) _obsService.StartStreaming();
+                    break;
+                case BindingType.ObsStopStream:
+                    if (value > 0) _obsService.StopStreaming();
+                    break;
+                case BindingType.ObsStartRecord:
+                    if (value > 0) _obsService.StartRecording();
+                    break;
+                case BindingType.ObsStopRecord:
+                    if (value > 0) _obsService.StopRecording();
+                    break;
+                case BindingType.ObsSaveReplay:
+                    if (value > 0) _obsService.SaveReplayBuffer();
+                    break;
+                
+                case BindingType.ObsSetForegroundWindow:
+                    if (value > 0)
+                    {
+                        var info = WindowHelper.GetForegroundWindowInfo();
+                        if (!string.IsNullOrEmpty(info))
+                        {
+                            Console.WriteLine($"Switching Source '{binding.Target}' to: {info}");
+                            _obsService.SetInputTarget(binding.Target, info);
+                        }
+                    }
+                    break;
 
-                if (inputMul <= 0.0001f)
+                // Expansion
+                case BindingType.RunProcess:
+                    if (value > 0) ActionExecutor.RunProcess(binding.Target, binding.Data);
+                    break;
+                case BindingType.KeyboardKey:
+                    if (value > 0 && byte.TryParse(binding.Data, out byte vk)) InputHelper.PressKey(vk);
+                    break;
+                case BindingType.HttpRequest:
+                    if (value > 0) ActionExecutor.SendHttpRequest(binding.Target, binding.Data);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 独立执行器，用于处理非 MIDI 相关的通用操作
+    /// </summary>
+    public static class ActionExecutor
+    {
+        public static void RunProcess(string path, string args)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    obsDb = -100.0f; // 视为静音 (-inf)
+                    FileName = path,
+                    Arguments = args,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"无法启动进程: {ex.Message}");
+            }
+        }
+
+        public static async void SendHttpRequest(string url, string methodData)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                HttpResponseMessage? response = null;
+                
+                // data format: "METHOD|BODY" or just "METHOD" or JSON config
+                // Simple parsing for now:
+                string method = methodData;
+                string body = "";
+                
+                if (methodData.Contains('|')) {
+                    var parts = methodData.Split('|', 2);
+                    method = parts[0];
+                    body = parts[1];
+                }
+
+                if (string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+                    response = await client.PostAsync(url, content);
                 }
                 else
                 {
-                    obsDb = (float)(20 * Math.Log10(inputMul));
+                    response = await client.GetAsync(url);
                 }
                 
-                // 限制最大为 0dB (避免过大增益)
-                if (obsDb > 0) obsDb = 0;
-
-                _obsService.SetVolume(binding.Target, obsDb, useMul: false);
-                break;
-            case BindingType.ObsMute:
-                if (value > 0) // 按下按钮时触发
-                {
-                    _obsService.ToggleMute(binding.Target);
-                }
-                break;
-            case BindingType.ObsSwitchScene:
-                if (value > 0)
-                {
-                    _obsService.SetCurrentScene(binding.Target);
-                }
-                break;
-            case BindingType.MediaPlayPause:
-                if (value > 0) InputHelper.TogglePlayPause();
-                break;
-            case BindingType.MediaNext:
-                if (value > 0) InputHelper.NextTrack();
-                break;
-            case BindingType.MediaPrev:
-                if (value > 0) InputHelper.PrevTrack();
-                break;
-             case BindingType.MediaStop:
-                if (value > 0) InputHelper.StopMedia();
-                break;
+                Console.WriteLine($"HTTP 请求 ({url}) [{method}] 状态码: {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"HTTP 请求失败: {ex.Message}");
+            }
         }
     }
 
@@ -230,9 +317,15 @@ public static class InputHelper
         keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0);
     }
 
-     public static void StopMedia()
+    public static void StopMedia()
     {
         keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_EXTENDEDKEY, 0);
         keybd_event(VK_MEDIA_STOP, 0, KEYEVENTF_KEYUP, 0);
+    }
+
+    public static void PressKey(byte vkCode)
+    {
+        keybd_event(vkCode, 0, 0, 0);
+        keybd_event(vkCode, 0, KEYEVENTF_KEYUP, 0);
     }
 }

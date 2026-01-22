@@ -54,9 +54,14 @@ public class MidiBinding
     public BindingType Type { get; set; }
 
     /// <summary>
-    /// 目标名称 (例如 OBS 源名称或场景名称)
+    /// 目标名称 (例如 OBS 源名称或场景名称, 或 HTTP URL, 或 文件路径)
     /// </summary>
     public string Target { get; set; } = "";
+
+    /// <summary>
+    /// 附加数据 (例如 HTTP Body, 进程参数, 或 键码)
+    /// </summary>
+    public string Data { get; set; } = "";
 }
 
 /// <summary>
@@ -69,8 +74,17 @@ public enum BindingType
     ObsVolume,       // OBS 源音量
     ObsMute,         // OBS 源静音切换
     ObsSwitchScene,  // OBS 切换场景
-    MediaPlayPause,  // 媒体播放/暂停
-    MediaNext,       // 媒体下一曲
-    MediaPrev,       // 媒体上一曲
-    MediaStop        // 媒体停止
+    MediaPlayPause,  // 媒体 播放/暂停
+    MediaNext,       // 媒体 下一曲
+    MediaPrev,       // 媒体 上一曲
+    MediaStop,       // 媒体 停止
+    ObsStartStream,  // OBS 开始推流
+    ObsStopStream,   // OBS 停止推流
+    ObsStartRecord,  // OBS 开始录制
+    ObsStopRecord,   // OBS 停止录制
+    ObsSaveReplay,   // OBS 保存回放缓冲区
+    RunProcess,      // 运行外部程序
+    KeyboardKey,     // 模拟键盘按键
+    HttpRequest,     // 发送 HTTP 请求 (GET/POST)
+    ObsSetForegroundWindow // 将当前前台窗口设为 OBS 源目标
 }

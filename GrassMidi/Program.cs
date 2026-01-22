@@ -43,10 +43,53 @@ app.MapGet("/api/obs/status", (ObsService os) => new { Connected = os.IsConnecte
 
 app.MapGet("/api/midi/last", () => lastMidiMessage);
 
+// 模拟 MIDI 输入 (Inject)
+// 允许外部脚本或 App 触发 "学习模式" 或直接触发绑定
+app.MapPost("/api/midi/inject", (MidiService ms, [FromBody] MidiMessagePayload payload) => {
+    // 触发学习事件
+    ms.TriggerMidiEvent(payload.Channel, payload.Note, payload.IsControlChange, payload.Value);
+    return Results.Ok();
+});
+
+// 直接执行动作 (Execute Action)
+// 允许外部直接调用服务功能 (OBS, Media, etc)
+app.MapPost("/api/actions/execute", (MidiService ms, ObsService os, AudioService audio, [FromBody] ActionRequest req) => {
+    try {
+        switch (req.Type) {
+             case BindingType.SystemVolume:
+                audio.SetMasterVolume(req.Value / 127f);
+                break;
+            case BindingType.ObsSwitchScene:
+                os.SetCurrentScene(req.Target);
+                break;
+            case BindingType.ObsStartStream:
+                os.StartStreaming();
+                break;
+            case BindingType.ObsStopStream:
+                os.StopStreaming();
+                break;
+            case BindingType.RunProcess:
+                GrassMidi.Services.MidiService.ActionExecutor.RunProcess(req.Target, req.Data);
+                break;
+            case BindingType.HttpRequest:
+                GrassMidi.Services.MidiService.ActionExecutor.SendHttpRequest(req.Target, req.Data);
+                break;
+            // ... 可根据需要补充更多 case
+            default:
+                // 如果是简单触发类型，尝试通用处理? 目前主要支持显式调用的
+                break;
+        }
+        return Results.Ok();
+    } catch (Exception ex) {
+        return Results.Problem(ex.Message);
+    }
+});
+
 Console.WriteLine("GrassMidi 已启动。请在浏览器或 OBS 停靠窗口中打开 http://localhost:5000");
 
 app.Run("http://*:5000");
 
 // Records
 record MidiMessagePayload(int Channel, int Note, bool IsControlChange, int Value, long Timestamp);
+record ActionRequest(BindingType Type, string Target, string Data, int Value);
 

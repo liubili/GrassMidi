@@ -1,5 +1,6 @@
 using OBSWebsocketDotNet;
 using GrassMidi.Models;
+using Newtonsoft.Json.Linq;
 
 namespace GrassMidi.Services;
 
@@ -51,13 +52,13 @@ public class ObsService
     /// 设置源音量
     /// </summary>
     /// <param name="volume">音量值 (倍数或 dB)</param>
-    /// <param name="useMul">是否使用倍数 (Multiplier) 模式, false 为 dB 模式</param>
-    public void SetVolume(string sourceName, float volume, bool useMul = true)
+    /// <param name="useDb">是否使用分贝 (dB) 模式</param>
+    public void SetVolume(string sourceName, float volume, bool useDb = false)
     {
         if (!_isConnected) return;
         try
         {
-             _obs.SetInputVolume(sourceName, volume, useMul);
+             _obs.SetInputVolume(sourceName, volume, useDb);
         }
         catch(Exception ex)
         {
@@ -95,5 +96,36 @@ public class ObsService
         {
             Console.WriteLine($"OBS 切换场景错误: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 设置源的目标窗口 (针对 窗口采集 或 音频采集)
+    /// </summary>
+    public void SetInputTarget(string sourceName, string windowInfo)
+    {
+        if (!_isConnected) return;
+        try
+        {
+            var settings = new JObject();
+            settings["window"] = windowInfo;
+            // overlay = true: 保持其他设置不变
+             _obs.SetInputSettings(sourceName, settings, true);
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"OBS 设置目标错误: {ex.Message}");
+        }
+    }
+
+    public void StartStreaming() { SafeRun(() => _obs.StartStream()); }
+    public void StopStreaming() { SafeRun(() => _obs.StopStream()); }
+    public void StartRecording() { SafeRun(() => _obs.StartRecord()); }
+    public void StopRecording() { SafeRun(() => _obs.StopRecord()); }
+    public void SaveReplayBuffer() { SafeRun(() => _obs.SaveReplayBuffer()); }
+
+    private void SafeRun(Action action)
+    {
+        if (!_isConnected) return;
+        try { action(); } catch (Exception ex) { Console.WriteLine($"OBS 操作错误: {ex.Message}"); }
     }
 }

@@ -8,42 +8,80 @@
       "Note": 1,
       "IsControlChange": true,
       "Type": "SystemVolume",
-      "Target": ""
+      "Target": "",
+      "Data": ""
     },
     {
-      "Channel": 1,
-      "Note": 70,
-      "IsControlChange": true,
-      "Type": "ObsVolume",
-      "Target": "\u684C\u9762\u97F3\u9891"
+      "Channel": 10,
+      "Note": 40,
+      "IsControlChange": false,
+      "Type": "ObsSwitchScene",
+      "Target": "\u4E3B\u573A\u666F",
+      "Data": ""
     },
     {
-      "Channel": 1,
-      "Note": 118,
-      "IsControlChange": true,
-      "Type": "MediaPlayPause",
-      "Target": ""
+      "Channel": 10,
+      "Note": 38,
+      "IsControlChange": false,
+      "Type": "ObsSwitchScene",
+      "Target": "\u901A\u7528",
+      "Data": ""
     },
     {
       "Channel": 1,
       "Note": 115,
       "IsControlChange": true,
       "Type": "MediaPrev",
-      "Target": ""
+      "Target": "",
+      "Data": ""
     },
     {
       "Channel": 1,
       "Note": 116,
       "IsControlChange": true,
       "Type": "MediaNext",
-      "Target": ""
+      "Target": "",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 118,
+      "IsControlChange": true,
+      "Type": "MediaPlayPause",
+      "Target": "",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 70,
+      "IsControlChange": true,
+      "Type": "ObsVolume",
+      "Target": "\u9EA6\u514B\u98CE/Aux",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 74,
+      "IsControlChange": true,
+      "Type": "ObsVolume",
+      "Target": "\u684C\u9762\u97F3\u9891",
+      "Data": ""
+    },
+    {
+      "Channel": 1,
+      "Note": 119,
+      "IsControlChange": true,
+      "Type": "ObsStartRecord",
+      "Target": "",
+      "Data": ""
     },
     {
       "Channel": 1,
       "Note": 117,
       "IsControlChange": true,
-      "Type": "MediaStop",
-      "Target": ""
+      "Type": "ObsStopRecord",
+      "Target": "",
+      "Data": ""
     }
   ]
 }
